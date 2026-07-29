@@ -28,14 +28,17 @@ module.exports = grammar({
     [$.call_statement, $._value],
     [$.declaration, $.call_statement, $._value],
     [$.parameter, $._value],
-    [$.argument_list, $._values],
     [$.call_statement],
     [$.declaration],
     [$.variable_declaration],
     [$.return_statement],
     [$.number_value],
     [$.parenthesized_expression],
-    [$._simple_selector, $.declaration],
+    [$.generic_at_rule, $._value],
+    [$._argument, $._values],
+    [$.mixin_definition, $.call_statement],
+    [$.mixin_definition, $.rule_set],
+    [$.mixin_definition, $.declaration],
   ],
 
   rules: {
@@ -59,9 +62,12 @@ module.exports = grammar({
     ),
 
     // ---------- selectors ----------
-    rule_set: $ => seq($.selector_list, $.block),
+    rule_set: $ => prec.dynamic(2, seq($.selector_list, $.block)),
 
-    selector_list: $ => seq($._selector, repeat(seq(',', $._selector))),
+    selector_list: $ => seq(
+      $._selector,
+      repeat(seq(',', optional($._newline), $._selector)),
+    ),
 
     _selector: $ => repeat1(choice($._simple_selector, $.combinator)),
 
@@ -94,7 +100,7 @@ module.exports = grammar({
       alias($.identifier, $.attribute_name),
       optional(seq(
         choice('=', '~=', '^=', '$=', '*=', '|='),
-        choice($.identifier, $.string_value),
+        choice($.identifier, $.string_value, $.variable),
       )),
       ']',
     ),
@@ -117,46 +123,67 @@ module.exports = grammar({
     ),
 
     // ---------- declarations ----------
-    declaration: $ => seq(
+    declaration: $ => prec.dynamic(1, seq(
       field('property', choice(
         alias($.identifier, $.property_name),
         alias($.interpolated_name, $.property_name),
       )),
       optional(choice(':', token.immediate(':'))),
       $._values,
+      optional($.postfix_condition),
       optional($._terminator),
-    ),
+    )),
+
+    postfix_condition: $ => seq(choice('if', 'unless'), $._values),
 
     variable_declaration: $ => seq(
       field('name', choice($.variable, alias($.identifier, $.variable_name))),
       '=',
-      $._values,
+      choice($._values, $.block_capture),
       optional($._terminator),
+    ),
+
+    block_capture: $ => seq(
+      alias('@block', $.at_keyword),
+      $.block,
     ),
 
     _terminator: $ => choice(';', $._newline),
 
     // ---------- calls / mixins ----------
     call_statement: $ => seq(
-      field('function', $.identifier),
+      field('function', choice($.identifier, $.interpolated_name)),
       optional(choice($.argument_list, $._values)),
+      optional($.postfix_condition),
       optional($._terminator),
     ),
 
-    mixin_definition: $ => seq(
+    mixin_definition: $ => prec.dynamic(3, seq(
       field('name', $.identifier),
       $.parameter_list,
       $.block,
-    ),
+    )),
 
-    parameter_list: $ => seq('(', commaSep($.parameter), ')'),
+    parameter_list: $ => seq(token.immediate('('), commaSepNL($, $.parameter), ')'),
 
     parameter: $ => seq(
       choice($.variable, $.identifier),
       optional(seq('=', $._value)),
+      optional('...'),
     ),
 
-    argument_list: $ => seq('(', commaSep($._value), ')'),
+    argument_list: $ => seq(token.immediate('('), commaSepNL($, $._argument), ')'),
+
+    _argument: $ => choice(
+      seq($._value, repeat($._value)),
+      $.named_argument,
+    ),
+
+    named_argument: $ => seq(
+      alias($.identifier, $.property_name),
+      ':',
+      $._value,
+    ),
 
     call_expression: $ => prec(PREC.call, seq(
       field('function', choice($.variable, $.identifier)),
@@ -190,9 +217,15 @@ module.exports = grammar({
       $.interpolation,
       $.url_value,
       $.media_feature,
+      $.class_selector,
+      $.id_selector,
+      $.universal_selector,
+      $.optional_flag,
       ',',
       'and', 'or', 'not', 'only',
     ),
+
+    optional_flag: $ => token('!optional'),
 
     media_feature: $ => seq(
       '(',
@@ -261,7 +294,13 @@ module.exports = grammar({
     ),
 
     // ---------- values ----------
-    _values: $ => seq($._value, repeat(seq(optional(','), $._value))),
+    _values: $ => seq(
+      $._value,
+      repeat(choice(
+        seq(',', optional($._newline), $._value),
+        $._value,
+      )),
+    ),
 
     _value: $ => choice(
       $.binary_expression,
@@ -277,8 +316,32 @@ module.exports = grammar({
       $.null_value,
       $.identifier,
       $.interpolation,
+      $.hash_literal,
+      $.at_keyword,
       $.important,
       $.url_value,
+    ),
+
+    hash_literal: $ => seq(
+      '{',
+      optional($._newline),
+      optional(seq(
+        $.hash_pair,
+        repeat(seq(',', optional($._newline), $.hash_pair)),
+        optional(','),
+      )),
+      optional($._newline),
+      '}',
+    ),
+
+    hash_pair: $ => seq(
+      choice(
+        alias($.identifier, $.property_name),
+        alias($.interpolated_name, $.property_name),
+        $.string_value,
+      ),
+      ':',
+      $._value,
     ),
 
     binary_expression: $ => choice(
@@ -336,14 +399,14 @@ module.exports = grammar({
 
     variable: $ => token(seq('$', /[-_a-zA-Z][-_a-zA-Z0-9]*/)),
 
-    identifier: $ => /-?[_a-zA-Z][-_a-zA-Z0-9]*/,
+    identifier: $ => /-{0,2}[_a-zA-Z][-_a-zA-Z0-9]*/,
   },
 });
 
-function commaSep(rule) {
-  return optional(commaSep1(rule));
+function commaSepNL($, rule) {
+  return optional(commaSep1NL($, rule));
 }
 
-function commaSep1(rule) {
-  return seq(rule, repeat(seq(',', rule)));
+function commaSep1NL($, rule) {
+  return seq(rule, repeat(seq(',', optional($._newline), rule)));
 }

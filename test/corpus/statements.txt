@@ -373,3 +373,263 @@ a
       (declaration
         property: (property_name)
         (identifier)))))
+
+==================
+Hash literals
+==================
+
+$b = {
+  mobile: 480px,
+  desktop: 1024px
+}
+$t = { bg: #fff, nested: { a: 1 } }
+
+---
+
+(source_file
+  (variable_declaration
+    name: (variable)
+    (hash_literal
+      (hash_pair
+        (property_name)
+        (number_value
+          (number)
+          (unit)))
+      (hash_pair
+        (property_name)
+        (number_value
+          (number)
+          (unit)))))
+  (variable_declaration
+    name: (variable)
+    (hash_literal
+      (hash_pair
+        (property_name)
+        (color_value))
+      (hash_pair
+        (property_name)
+        (hash_literal
+          (hash_pair
+            (property_name)
+            (number_value
+              (number))))))))
+
+==================
+Postfix conditionals
+==================
+
+.a
+  padding 10px if $mobile
+  margin 0 unless $disabled
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (declaration
+        property: (property_name)
+        (number_value
+          (number)
+          (unit))
+        (postfix_condition
+          (variable)))
+      (declaration
+        property: (property_name)
+        (number_value
+          (number))
+        (postfix_condition
+          (variable))))))
+
+==================
+@extend
+==================
+
+.a
+  @extend .message !optional
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (at_rule
+        (generic_at_rule
+          (at_keyword)
+          (class_selector
+            (class_name))
+          (optional_flag))))))
+
+==================
+@block capture and call
+==================
+
+$r = @block
+  margin 0
+.a
+  {$r}
+
+---
+
+(source_file
+  (variable_declaration
+    name: (variable)
+    (block_capture
+      (at_keyword)
+      (block
+        (declaration
+          property: (property_name)
+          (number_value
+            (number))))))
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (call_statement
+        function: (interpolated_name)))))
+
+==================
+Named and multi-value arguments
+==================
+
+.a
+  fn(x: 1px, blur: 10px)
+  background linear-gradient(to right, #fff 0%, #000 100%)
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (call_statement
+        function: (identifier)
+        (argument_list
+          (named_argument
+            (property_name)
+            (number_value
+              (number)
+              (unit)))
+          (named_argument
+            (property_name)
+            (number_value
+              (number)
+              (unit)))))
+      (declaration
+        property: (property_name)
+        (call_expression
+          function: (identifier)
+          (argument_list
+            (identifier)
+            (identifier)
+            (color_value)
+            (number_value
+              (number)
+              (unit))
+            (color_value)
+            (number_value
+              (number)
+              (unit))))))))
+
+==================
+Custom properties
+==================
+
+:root
+  --main-color: #06c
+  --gap: 16px
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (pseudo_class_selector
+        (pseudo_class_name)))
+    (block
+      (declaration
+        property: (property_name)
+        (color_value))
+      (declaration
+        property: (property_name)
+        (number_value
+          (number)
+          (unit))))))
+
+==================
+Multi-line comma lists
+==================
+
+.a,
+.b
+  box-shadow 0 1px 2px red,
+            0 2px 4px blue
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name))
+      (class_selector
+        (class_name)))
+    (block
+      (declaration
+        property: (property_name)
+        (number_value
+          (number))
+        (number_value
+          (number)
+          (unit))
+        (number_value
+          (number)
+          (unit))
+        (identifier)
+        (number_value
+          (number))
+        (number_value
+          (number)
+          (unit))
+        (number_value
+          (number)
+          (unit))
+        (identifier)))))
+
+==================
+Rest parameters and property lookup
+==================
+
+m(props...)
+  width 100px
+  margin-left @width / 2
+
+---
+
+(source_file
+  (mixin_definition
+    name: (identifier)
+    (parameter_list
+      (parameter
+        (identifier)))
+    (block
+      (declaration
+        property: (property_name)
+        (number_value
+          (number)
+          (unit)))
+      (declaration
+        property: (property_name)
+        (binary_expression
+          (at_keyword)
+          (number_value
+            (number)))))))
