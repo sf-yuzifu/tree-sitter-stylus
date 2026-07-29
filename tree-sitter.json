@@ -1,0 +1,19 @@
+{
+  "grammars": [
+    {
+      "name": "stylus",
+      "camelcase": "Stylus",
+      "scope": "source.stylus",
+      "path": ".",
+      "file-types": ["styl"]
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Stylus (CSS preprocessor) grammar for tree-sitter",
+    "links": {
+      "repository": "https://github.com/yuzifu/tree-sitter-stylus"
+    }
+  }
+}

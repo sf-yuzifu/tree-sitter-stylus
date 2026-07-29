@@ -1,0 +1,375 @@
+==================
+Variable declarations
+==================
+
+$primary = #3498db
+$font-stack = 'Helvetica Neue', sans-serif
+base-size = 16px
+
+---
+
+(source_file
+  (variable_declaration
+    name: (variable)
+    (color_value))
+  (variable_declaration
+    name: (variable)
+    (string_value)
+    (identifier))
+  (variable_declaration
+    name: (variable_name)
+    (number_value
+      (number)
+      (unit))))
+
+==================
+Declarations (indented)
+==================
+
+.card
+  margin: 0 auto
+  padding 10px 20px
+  color $primary
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (declaration
+        property: (property_name)
+        (number_value
+          (number))
+        (identifier))
+      (declaration
+        property: (property_name)
+        (number_value
+          (number)
+          (unit))
+        (number_value
+          (number)
+          (unit)))
+      (declaration
+        property: (property_name)
+        (variable)))))
+
+==================
+Brace style
+==================
+
+.button {
+  color: red;
+  margin: 0;
+}
+a { display: block }
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (declaration
+        property: (property_name)
+        (identifier))
+      (declaration
+        property: (property_name)
+        (number_value
+          (number)))))
+  (rule_set
+    (selector_list
+      (tag_name))
+    (block
+      (declaration
+        property: (property_name)
+        (identifier)))))
+
+==================
+Nested selectors
+==================
+
+.card
+  &:hover
+    box-shadow 0 4px 20px rgba(0, 0, 0, 0.1)
+  > .content
+    display block
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (rule_set
+        (selector_list
+          (parent_selector)
+          (pseudo_class_selector
+            (pseudo_class_name)))
+        (block
+          (declaration
+            property: (property_name)
+            (number_value
+              (number))
+            (number_value
+              (number)
+              (unit))
+            (number_value
+              (number)
+              (unit))
+            (call_expression
+              function: (identifier)
+              (argument_list
+                (number_value
+                  (number))
+                (number_value
+                  (number))
+                (number_value
+                  (number))
+                (number_value
+                  (number)))))))
+      (rule_set
+        (selector_list
+          (combinator)
+          (class_selector
+            (class_name)))
+        (block
+          (declaration
+            property: (property_name)
+            (identifier)))))))
+
+==================
+Mixin definition and call
+==================
+
+border-radius(r = 5px)
+  border-radius r
+
+.card
+  border-radius(8px)
+
+---
+
+(source_file
+  (mixin_definition
+    name: (identifier)
+    (parameter_list
+      (parameter
+        (identifier)
+        (number_value
+          (number)
+          (unit))))
+    (block
+      (declaration
+        property: (property_name)
+        (identifier))))
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (call_statement
+        function: (identifier)
+        (argument_list
+          (number_value
+            (number)
+            (unit)))))))
+
+==================
+If / else
+==================
+
+.alert
+  if $theme == dark
+    background #222
+  else
+    background white
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (if_statement
+        condition: (binary_expression
+          (variable)
+          (identifier))
+        (block
+          (declaration
+            property: (property_name)
+            (color_value)))
+        (else_clause
+          (block
+            (declaration
+              property: (property_name)
+              (identifier))))))))
+
+==================
+For loop
+==================
+
+for i in (1..5)
+  .col-{i}
+    width (i * 20)%
+
+---
+
+(source_file
+  (for_statement
+    value: (identifier)
+    (parenthesized_expression
+      (range_expression
+        (number_value
+          (number))
+        (number_value
+          (number))))
+    (block
+      (rule_set
+        (selector_list
+          (class_selector
+            (class_name)))
+        (block
+          (declaration
+            property: (property_name)
+            (parenthesized_expression
+              (binary_expression
+                (identifier)
+                (number_value
+                  (number)))
+              (unit))))))))
+
+==================
+At-rules
+==================
+
+@import 'reset.styl'
+
+@media screen and (min-width: 768px)
+  .container
+    width 750px
+
+---
+
+(source_file
+  (at_rule
+    (generic_at_rule
+      (at_keyword)
+      (string_value)))
+  (at_rule
+    (generic_at_rule
+      (at_keyword)
+      (identifier)
+      (media_feature
+        property: (property_name)
+        (number_value
+          (number)
+          (unit)))
+      (block
+        (rule_set
+          (selector_list
+            (class_selector
+              (class_name)))
+          (block
+            (declaration
+              property: (property_name)
+              (number_value
+                (number)
+                (unit)))))))))
+
+==================
+Keyframes
+==================
+
+@keyframes fade-in
+  from
+    opacity 0
+  50%
+    opacity .5
+  to
+    opacity 1
+
+---
+
+(source_file
+  (at_rule
+    (keyframes_statement
+      (at_keyword)
+      name: (identifier)
+      (keyframes_block
+        (keyframe_rule
+          (block
+            (declaration
+              property: (property_name)
+              (number_value
+                (number)))))
+        (keyframe_rule
+          (number_value
+            (number)
+            (unit))
+          (block
+            (declaration
+              property: (property_name)
+              (number_value
+                (number)))))
+        (keyframe_rule
+          (block
+            (declaration
+              property: (property_name)
+              (number_value
+                (number)))))))))
+
+==================
+Interpolated names
+==================
+
+vendor(prop, val)
+  -{prefix}-{prop} val
+  {prop} val
+
+---
+
+(source_file
+  (mixin_definition
+    name: (identifier)
+    (parameter_list
+      (parameter
+        (identifier))
+      (parameter
+        (identifier)))
+    (block
+      (declaration
+        property: (property_name)
+        (identifier))
+      (declaration
+        property: (property_name)
+        (identifier)))))
+
+==================
+Comments
+==================
+
+// line comment
+/* block
+   comment */
+a
+  color red // trailing
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (tag_name))
+    (block
+      (declaration
+        property: (property_name)
+        (identifier)))))
