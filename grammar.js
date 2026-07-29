@@ -16,7 +16,7 @@ module.exports = grammar({
 
   extras: $ => [/[^\S\n]/, $.comment],
 
-  externals: $ => [$._newline, $._indent, $._dedent],
+  externals: $ => [$._newline, $._indent, $._dedent, $._brace_newline],
 
   conflicts: $ => [
     [$.declaration, $.call_statement],
@@ -35,10 +35,26 @@ module.exports = grammar({
     [$.number_value],
     [$.parenthesized_expression],
     [$.generic_at_rule, $._value],
-    [$._argument, $._values],
-    [$.mixin_definition, $.call_statement],
-    [$.mixin_definition, $.rule_set],
-    [$.mixin_definition, $.declaration],
+    [$.universal_selector, $.declaration],
+    [$.declaration, $._value],
+    [$._argument, $._value],
+    [$.parameter_list, $.argument_list],
+    [$._simple_selector, $._value],
+    [$.selector_list],
+    [$.expression_statement],
+    [$._simple_selector, $.declaration, $._value],
+    [$.pseudo_class_selector],
+    [$.pseudo_element_selector],
+    [$._values, $.interpolation],
+    [$.expression_statement, $.expression_block],
+    [$.assignment_expression, $._values],
+    [$.assignment_expression, $.parameter],
+    [$.postfix_comprehension],
+    [$._keyframe_selector, $._value],
+    [$.ternary_expression, $._values],
+    [$.at_pseudo_selector],
+    [$.id_selector, $.color_value],
+    [$.root_reference],
   ],
 
   rules: {
@@ -50,10 +66,12 @@ module.exports = grammar({
       $.variable_declaration,
       $.declaration,
       $.call_statement,
+      $.block_call_statement,
       $.mixin_definition,
       $.if_statement,
       $.for_statement,
       $.return_statement,
+      $.expression_statement,
     ),
 
     comment: $ => choice(
@@ -66,7 +84,10 @@ module.exports = grammar({
 
     selector_list: $ => seq(
       $._selector,
-      repeat(seq(',', optional($._newline), $._selector)),
+      repeat(choice(
+        seq(',', optional($._newline), $._selector),
+        seq($._newline, $._selector),
+      )),
     ),
 
     _selector: $ => repeat1(choice($._simple_selector, $.combinator)),
@@ -80,7 +101,15 @@ module.exports = grammar({
       $.attribute_selector,
       $.pseudo_class_selector,
       $.pseudo_element_selector,
+      $.pseudo_interpolation_selector,
+      $.at_pseudo_selector,
+      $.reference_selector,
+      $.root_reference,
+      $.relative_reference,
+      $.namespace_selector,
       $.parent_selector,
+      alias($.variable, $.tag_name),
+      alias($.interpolation, $.tag_name),
       alias($.interpolated_name, $.tag_name),
       alias($.identifier, $.tag_name),
     ),
@@ -90,14 +119,49 @@ module.exports = grammar({
       alias($.interpolated_name, $.class_name),
     )),
     id_selector: $ => seq('#', choice(
-      alias($.identifier, $.id_name),
+      alias($._hash_value, $.id_name),
       alias($.interpolated_name, $.id_name),
     )),
     universal_selector: $ => '*',
-    parent_selector: $ => '&',
+    parent_selector: $ => seq('&', optional($.parent_suffix)),
+    parent_suffix: $ => token.immediate(/-[0-9][-_a-zA-Z0-9]*/),
+    reference_selector: $ => seq('^', '[', $._values, ']'),
+    root_reference: $ => seq(
+      '/',
+      optional(choice(
+        $.variable,
+        $.class_selector,
+        $.id_selector,
+        seq($.interpolation, optional(alias($.identifier, $.tag_name))),
+        alias($.interpolated_name, $.tag_name),
+        alias($.identifier, $.tag_name),
+      )),
+    ),
+    relative_reference: $ => seq(
+      repeat1('../'),
+      choice(
+        $.class_selector,
+        $.id_selector,
+        alias($.interpolated_name, $.tag_name),
+        alias($.identifier, $.tag_name),
+      ),
+    ),
+    namespace_selector: $ => seq(
+      choice(alias($.identifier, $.tag_name), '*'),
+      '|',
+      choice(
+        $.class_selector,
+        $.id_selector,
+        alias($.identifier, $.tag_name),
+        '*',
+      ),
+    ),
     attribute_selector: $ => seq(
       '[',
-      alias($.identifier, $.attribute_name),
+      choice(
+        alias($.identifier, $.attribute_name),
+        $.string_value,
+      ),
       optional(seq(
         choice('=', '~=', '^=', '$=', '*=', '|='),
         choice($.identifier, $.string_value, $.variable),
@@ -114,32 +178,77 @@ module.exports = grammar({
       alias(token.immediate(/[-_a-zA-Z][-_a-zA-Z0-9]*/), $.pseudo_element_name),
       optional($.pseudo_arguments),
     )),
-    pseudo_arguments: $ => seq('(', /[^)]*/, ')'),
+    pseudo_interpolation_selector: $ => seq(
+      token.immediate(':'),
+      $.interpolation,
+    ),
+    pseudo_arguments: $ => seq(
+      '(',
+      repeat(choice($.pseudo_arguments, $.pseudo_argument_text)),
+      ')',
+    ),
+    pseudo_argument_text: $ => token(prec(-1, /[^()]+/)),
 
     // ---------- blocks ----------
     block: $ => choice(
       seq('{', repeat(choice($._statement, $._newline)), '}'),
-      seq($._indent, repeat(choice($._statement, $._newline)), $._dedent),
+      seq($._brace_newline, '{', repeat(choice($._statement, $._newline)), '}'),
+      $._indented_block,
+    ),
+
+    _indented_block: $ => seq(
+      $._indent,
+      repeat(choice($._statement, $._newline)),
+      $._dedent,
     ),
 
     // ---------- declarations ----------
     declaration: $ => prec.dynamic(1, seq(
+      optional('*'),
       field('property', choice(
         alias($.identifier, $.property_name),
         alias($.interpolated_name, $.property_name),
+        alias($.interpolation, $.property_name),
       )),
-      optional(choice(':', token.immediate(':'))),
-      $._values,
-      optional($.postfix_condition),
-      optional($._terminator),
+      choice(
+        seq(
+          optional(choice(':', token.immediate(':'))),
+          $._values,
+          repeat(choice($.postfix_condition, $.postfix_comprehension)),
+          optional($._terminator),
+        ),
+        seq(
+          choice(':', token.immediate(':')),
+          $._indent,
+          $._values,
+          optional(choice(',', ';')),
+          $._dedent,
+          optional($._terminator),
+        ),
+      ),
     )),
 
     postfix_condition: $ => seq(choice('if', 'unless'), $._values),
 
+    postfix_comprehension: $ => seq(
+      'for',
+      choice($.identifier, $.variable),
+      optional(seq(',', choice($.identifier, $.variable))),
+      'in',
+      $._values,
+      optional($.postfix_condition),
+    ),
+
     variable_declaration: $ => seq(
-      field('name', choice($.variable, alias($.identifier, $.variable_name))),
-      '=',
-      choice($._values, $.block_capture),
+      field('name', choice(
+        $.variable,
+        alias($.identifier, $.variable_name),
+        $.subscript_expression,
+        $.member_expression,
+      )),
+      choice('=', '?=', ':=', '+=', '-=', '*=', '/=', '%='),
+      choice($._values, $.block_capture, $._indented_block),
+      repeat(choice($.postfix_condition, $.postfix_comprehension)),
       optional($._terminator),
     ),
 
@@ -150,6 +259,31 @@ module.exports = grammar({
 
     _terminator: $ => choice(';', $._newline),
 
+    expression_statement: $ => prec.dynamic(-1, seq(
+      $._values,
+      repeat(choice($.postfix_condition, $.postfix_comprehension)),
+      optional($._terminator),
+    )),
+
+    ternary_expression: $ => prec.right(seq(
+      $._value,
+      '?',
+      $._values,
+      ':',
+      $._values,
+    )),
+
+    assignment_expression: $ => prec.right(seq(
+      field('name', choice(
+        $.variable,
+        alias($.identifier, $.variable_name),
+        $.subscript_expression,
+        $.member_expression,
+      )),
+      choice('=', '?=', ':=', '+=', '-=', '*=', '/=', '%='),
+      $._value,
+    )),
+
     // ---------- calls / mixins ----------
     call_statement: $ => seq(
       field('function', choice($.identifier, $.interpolated_name)),
@@ -158,13 +292,28 @@ module.exports = grammar({
       optional($._terminator),
     ),
 
+    block_call_statement: $ => prec.dynamic(4, seq(
+      field('function', alias($.block_call_name, $.identifier)),
+      optional($.argument_list),
+      $.block,
+    )),
+
+    block_call_name: $ => token(seq('+', /-{0,2}[_a-zA-Z][-_a-zA-Z0-9]*/)),
+
     mixin_definition: $ => prec.dynamic(3, seq(
       field('name', $.identifier),
       $.parameter_list,
       $.block,
     )),
 
-    parameter_list: $ => seq(token.immediate('('), commaSepNL($, $.parameter), ')'),
+    parameter_list: $ => seq(
+      token.immediate('('),
+      optional($._newline),
+      commaSepNL($, $.parameter),
+      optional(','),
+      optional($._newline),
+      ')',
+    ),
 
     parameter: $ => seq(
       choice($.variable, $.identifier),
@@ -172,17 +321,26 @@ module.exports = grammar({
       optional('...'),
     ),
 
-    argument_list: $ => seq(token.immediate('('), commaSepNL($, $._argument), ')'),
+    argument_list: $ => seq(
+      token.immediate('('),
+      optional($._newline),
+      commaSepNL($, $._argument),
+      optional(','),
+      optional($._newline),
+      ')',
+    ),
 
     _argument: $ => choice(
-      seq($._value, repeat($._value)),
+      seq($._value, repeat($._value), optional('...')),
       $.named_argument,
+      $.anonymous_function,
+      $.block_capture,
     ),
 
     named_argument: $ => seq(
       alias($.identifier, $.property_name),
       ':',
-      $._value,
+      seq($._value, repeat($._value)),
     ),
 
     call_expression: $ => prec(PREC.call, seq(
@@ -193,14 +351,21 @@ module.exports = grammar({
     // ---------- at-rules ----------
     at_rule: $ => choice(
       $.keyframes_statement,
+      $.extend_statement,
       $.generic_at_rule,
     ),
 
-    generic_at_rule: $ => seq(
+    generic_at_rule: $ => prec.dynamic(3, seq(
       $.at_keyword,
       repeat($._at_param),
       choice($.block, $._terminator),
-    ),
+    )),
+
+    extend_statement: $ => prec.right(seq(
+      alias(choice('@extend', '@extends'), $.at_keyword),
+      repeat1($._at_param),
+      optional($._terminator),
+    )),
 
     at_keyword: $ => token(seq('@', /[-_a-zA-Z][-_a-zA-Z0-9]*/)),
 
@@ -219,19 +384,30 @@ module.exports = grammar({
       $.media_feature,
       $.class_selector,
       $.id_selector,
+      $.attribute_selector,
       $.universal_selector,
+      $.pseudo_class_selector,
+      $.pseudo_element_selector,
+      $.at_pseudo_selector,
       $.optional_flag,
       ',',
-      'and', 'or', 'not', 'only',
+      'and', 'or', 'not', 'only', '&&', '||',
     ),
 
     optional_flag: $ => token('!optional'),
+
+    at_pseudo_selector: $ => seq(
+      ':',
+      alias($.identifier, $.pseudo_class_name),
+      optional($.pseudo_arguments),
+    ),
 
     media_feature: $ => seq(
       '(',
       field('property', choice(
         alias($.identifier, $.property_name),
         alias($.variable, $.property_name),
+        alias($.interpolation, $.property_name),
       )),
       choice(':', token.immediate(':')),
       $._values,
@@ -240,7 +416,7 @@ module.exports = grammar({
 
     keyframes_statement: $ => seq(
       alias($.at_keyword_keyframes, $.at_keyword),
-      field('name', $.identifier),
+      field('name', choice($.identifier, $.interpolation, $.interpolated_name)),
       $.keyframes_block,
     ),
 
@@ -252,8 +428,14 @@ module.exports = grammar({
     ))),
 
     keyframes_block: $ => choice(
-      seq('{', repeat(choice($.keyframe_rule, $._newline)), '}'),
-      seq($._indent, repeat(choice($.keyframe_rule, $._newline)), $._dedent),
+      seq('{', repeat(choice($.keyframe_rule, $._statement, $._newline)), '}'),
+      seq(
+        $._brace_newline,
+        '{',
+        repeat(choice($.keyframe_rule, $._statement, $._newline)),
+        '}',
+      ),
+      seq($._indent, repeat(choice($.keyframe_rule, $._statement, $._newline)), $._dedent),
     ),
 
     keyframe_rule: $ => seq(
@@ -284,15 +466,20 @@ module.exports = grammar({
 
     for_statement: $ => seq(
       'for',
-      field('value', $.identifier),
-      optional(seq(',', field('key', $.identifier))),
+      field('value', choice($.identifier, $.variable)),
+      optional(seq(',', field('key', choice($.identifier, $.variable)))),
       'in',
       $._values,
       $.block,
     ),
 
     return_statement: $ => choice(
-      seq('return', $._values, optional($._terminator)),
+      seq(
+        'return',
+        $._values,
+        repeat(choice($.postfix_condition, $.postfix_comprehension)),
+        optional($._terminator),
+      ),
       seq('return', $._terminator),
     ),
 
@@ -300,17 +487,23 @@ module.exports = grammar({
     _values: $ => seq(
       $._value,
       repeat(choice(
-        seq(',', optional($._newline), $._value),
+        seq(optional($._newline), ',', optional($._newline), $._value),
         $._value,
       )),
     ),
 
     _value: $ => choice(
+      $.assignment_expression,
       $.binary_expression,
       $.unary_expression,
+      $.ternary_expression,
       $.range_expression,
+      $.subscript_expression,
+      $.member_expression,
       $.parenthesized_expression,
+      $.media_feature,
       $.call_expression,
+      $.anonymous_function,
       $.variable,
       $.color_value,
       $.number_value,
@@ -323,14 +516,49 @@ module.exports = grammar({
       $.at_keyword,
       $.important,
       $.url_value,
+      $.unicode_range,
+      $.escape_sequence,
     ),
+
+    subscript_expression: $ => prec.left(PREC.call, seq(
+      $._value,
+      '[',
+      optional($._values),
+      ']',
+    )),
+
+    member_expression: $ => prec.left(PREC.call, seq(
+      $._value,
+      '.',
+      alias($.identifier, $.property_name),
+    )),
+
+    anonymous_function: $ => seq('@', $.parameter_list, $.expression_block),
+
+    expression_block: $ => choice(
+      seq('{', repeat(choice($._statement, $._values, $._newline)), '}'),
+      seq(
+        $._brace_newline,
+        '{',
+        repeat(choice($._statement, $._values, $._newline)),
+        '}',
+      ),
+      seq($._indent, repeat(choice($._statement, $._values, $._newline)), $._dedent),
+    ),
+
+    unicode_range: $ => token(/[uU]\+[0-9a-fA-F?]{1,6}(-[0-9a-fA-F?]{1,6})?/),
+
+    escape_sequence: $ => token(/\\(.|\n)/),
 
     hash_literal: $ => seq(
       '{',
       optional($._newline),
       optional(seq(
         $.hash_pair,
-        repeat(seq(',', optional($._newline), $.hash_pair)),
+        repeat(choice(
+          seq(optional($._newline), ',', optional($._newline), $.hash_pair),
+          seq($._newline, $.hash_pair),
+        )),
         optional(','),
       )),
       optional($._newline),
@@ -345,15 +573,17 @@ module.exports = grammar({
         $.variable,
       ),
       ':',
-      $._value,
+      seq($._value, repeat($._value)),
     ),
 
     binary_expression: $ => choice(
+      prec.left(PREC.equality, seq($._value, 'is', 'a', $._value)),
+      prec.right(PREC.multiplicative, seq($._value, '**', $._value)),
       ...[
-        ['or', PREC.or],
-        ['and', PREC.and],
+        ['or', PREC.or], ['||', PREC.or],
+        ['and', PREC.and], ['&&', PREC.and],
         ['==', PREC.equality], ['!=', PREC.equality],
-        ['is', PREC.equality], ['isnt', PREC.equality],
+        ['is', PREC.equality], ['isnt', PREC.equality], ['in', PREC.equality],
         ['<', PREC.relational], ['<=', PREC.relational],
         ['>', PREC.relational], ['>=', PREC.relational],
         ['+', PREC.additive], ['-', PREC.additive],
@@ -361,16 +591,16 @@ module.exports = grammar({
       ].map(([operator, precedence]) => prec.left(precedence, seq($._value, operator, $._value))),
     ),
 
-    unary_expression: $ => prec(PREC.unary, seq(choice('-', '+', 'not'), $._value)),
+    unary_expression: $ => prec(PREC.unary, seq(choice('-', '+', 'not', '!', '~'), $._value)),
 
     range_expression: $ => prec.left(PREC.additive, seq($._value, choice('..', '...'), $._value)),
 
-    parenthesized_expression: $ => seq('(', $._values, ')', optional($.unit)),
+    parenthesized_expression: $ => seq('(', optional($._values), ')', optional($.unit)),
 
     interpolation: $ => seq('{', $._value, '}'),
 
     interpolated_name: $ => token(seq(
-      /[-_a-zA-Z0-9]*/,
+      /[-_a-zA-Z0-9$]*/,
       /\{[-_a-zA-Z0-9$]+\}/,
       /[-_a-zA-Z0-9{}$]*/,
     )),
@@ -379,7 +609,9 @@ module.exports = grammar({
 
     url_value: $ => token(prec(1, seq('url', '(', /[^)]*/, ')'))),
 
-    color_value: $ => token(prec(1, /#([0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})/)),
+    color_value: $ => seq('#', $._hash_value),
+
+    _hash_value: $ => token(/[-_a-zA-Z0-9]+/),
 
     number_value: $ => seq($.number, optional($.unit)),
 
@@ -403,7 +635,7 @@ module.exports = grammar({
 
     variable: $ => token(seq('$', /[-_a-zA-Z][-_a-zA-Z0-9]*/)),
 
-    identifier: $ => /-{0,2}[_a-zA-Z][-_a-zA-Z0-9]*/,
+    identifier: $ => /-{0,2}[_a-zA-Z]([-_a-zA-Z0-9]|\\.)*/,
   },
 });
 
@@ -412,5 +644,8 @@ function commaSepNL($, rule) {
 }
 
 function commaSep1NL($, rule) {
-  return seq(rule, repeat(seq(',', optional($._newline), rule)));
+  return seq(
+    rule,
+    repeat(seq(optional($._newline), ',', optional($._newline), rule)),
+  );
 }

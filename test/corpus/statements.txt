@@ -174,12 +174,13 @@ border-radius(r = 5px)
       (class_selector
         (class_name)))
     (block
-      (call_statement
-        function: (identifier)
-        (argument_list
-          (number_value
-            (number)
-            (unit)))))))
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          (argument_list
+            (number_value
+              (number)
+              (unit))))))))
 
 ==================
 If / else
@@ -372,7 +373,8 @@ a
     (block
       (declaration
         property: (property_name)
-        (identifier)))))
+        (identifier))
+      (comment))))
 
 ==================
 Hash literals
@@ -460,7 +462,7 @@ Postfix conditionals
         (class_name)))
     (block
       (at_rule
-        (generic_at_rule
+        (extend_statement
           (at_keyword)
           (class_selector
             (class_name))
@@ -511,19 +513,20 @@ Named and multi-value arguments
       (class_selector
         (class_name)))
     (block
-      (call_statement
-        function: (identifier)
-        (argument_list
-          (named_argument
-            (property_name)
-            (number_value
-              (number)
-              (unit)))
-          (named_argument
-            (property_name)
-            (number_value
-              (number)
-              (unit)))))
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          (argument_list
+            (named_argument
+              (property_name)
+              (number_value
+                (number)
+                (unit)))
+            (named_argument
+              (property_name)
+              (number_value
+                (number)
+                (unit))))))
       (declaration
         property: (property_name)
         (call_expression
