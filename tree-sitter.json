@@ -13,7 +13,7 @@
     "license": "MIT",
     "description": "Stylus (CSS preprocessor) grammar for tree-sitter",
     "links": {
-      "repository": "https://github.com/yuzifu/tree-sitter-stylus"
+      "repository": "https://github.com/sf-yuzifu/tree-sitter-stylus"
     }
   }
 }
