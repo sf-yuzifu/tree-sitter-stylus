@@ -229,7 +229,10 @@ module.exports = grammar({
 
     media_feature: $ => seq(
       '(',
-      field('property', alias($.identifier, $.property_name)),
+      field('property', choice(
+        alias($.identifier, $.property_name),
+        alias($.variable, $.property_name),
+      )),
       choice(':', token.immediate(':')),
       $._values,
       ')',
@@ -339,6 +342,7 @@ module.exports = grammar({
         alias($.identifier, $.property_name),
         alias($.interpolated_name, $.property_name),
         $.string_value,
+        $.variable,
       ),
       ':',
       $._value,
@@ -379,7 +383,7 @@ module.exports = grammar({
 
     number_value: $ => seq($.number, optional($.unit)),
 
-    number: $ => token(/([0-9]+(\.[0-9]+)?|\.[0-9]+)/),
+    number: $ => token(/([0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)?|\.[0-9]+([eE][-+]?[0-9]+)?)/),
 
     unit: $ => choice(
       '%', 'px', 'em', 'rem', 'vh', 'vw', 'vmin', 'vmax',

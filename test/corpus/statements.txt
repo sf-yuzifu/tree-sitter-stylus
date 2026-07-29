@@ -633,3 +633,64 @@ m(props...)
           (at_keyword)
           (number_value
             (number)))))))
+
+==================
+Scientific notation
+==================
+
+.a
+  width 1e5px
+  opacity 2.5e-1
+
+---
+
+(source_file
+  (rule_set
+    (selector_list
+      (class_selector
+        (class_name)))
+    (block
+      (declaration
+        property: (property_name)
+        (number_value
+          (number)
+          (unit)))
+      (declaration
+        property: (property_name)
+        (number_value
+          (number))))))
+
+==================
+Media feature with variable
+==================
+
+$bp = 768px
+@media (min-width: $bp)
+  .a
+    width 100%
+
+---
+
+(source_file
+  (variable_declaration
+    name: (variable)
+    (number_value
+      (number)
+      (unit)))
+  (at_rule
+    (generic_at_rule
+      (at_keyword)
+      (media_feature
+        property: (property_name)
+        (variable))
+      (block
+        (rule_set
+          (selector_list
+            (class_selector
+              (class_name)))
+          (block
+            (declaration
+              property: (property_name)
+              (number_value
+                (number)
+                (unit)))))))))

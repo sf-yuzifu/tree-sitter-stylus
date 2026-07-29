@@ -1250,13 +1250,27 @@
           "type": "FIELD",
           "name": "property",
           "content": {
-            "type": "ALIAS",
-            "content": {
-              "type": "SYMBOL",
-              "name": "identifier"
-            },
-            "named": true,
-            "value": "property_name"
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "identifier"
+                },
+                "named": true,
+                "value": "property_name"
+              },
+              {
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "variable"
+                },
+                "named": true,
+                "value": "property_name"
+              }
+            ]
           }
         },
         {
@@ -1881,6 +1895,10 @@
             {
               "type": "SYMBOL",
               "name": "string_value"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "variable"
             }
           ]
         },
@@ -2411,7 +2429,7 @@
       "type": "TOKEN",
       "content": {
         "type": "PATTERN",
-        "value": "([0-9]+(\\.[0-9]+)?|\\.[0-9]+)"
+        "value": "([0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?|\\.[0-9]+([eE][-+]?[0-9]+)?)"
       }
     },
     "unit": {

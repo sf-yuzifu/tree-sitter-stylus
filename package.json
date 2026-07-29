@@ -1,10 +1,8 @@
 {
   "name": "tree-sitter-stylus",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Stylus (CSS preprocessor) grammar for tree-sitter",
   "license": "MIT",
-  "main": "bindings/node",
-  "types": "bindings/node",
   "keywords": [
     "incremental",
     "parsing",
@@ -14,27 +12,11 @@
   ],
   "files": [
     "grammar.js",
+    "tree-sitter.json",
     "src",
-    "bindings",
     "queries"
   ],
-  "dependencies": {
-    "node-addon-api": "^8.2.2",
-    "node-gyp-build": "^4.8.2"
-  },
-  "peerDependencies": {
-    "tree-sitter": "^0.22.1"
-  },
   "devDependencies": {
     "tree-sitter-cli": "^0.26.0"
-  },
-  "tree-sitter": [
-    {
-      "scope": "source.stylus",
-      "name": "Stylus",
-      "file-types": [
-        "styl"
-      ]
-    }
-  ]
+  }
 }
