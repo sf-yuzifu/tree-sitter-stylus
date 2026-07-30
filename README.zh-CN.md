@@ -159,6 +159,16 @@ tree-sitter-stylus/
 
 提交 grammar 变更前请运行 `npx tree-sitter test` 并解析 `example.styl`。Zed 集成相关问题请提交到 [stylus-zed](https://github.com/sf-yuzifu/stylus-zed)。
 
+## 致谢
+
+本 grammar 建立在以下项目的工作之上，谨致谢意：
+
+- [Stylus](https://github.com/stylus/stylus)：语言、参考编译器、文档，以及用于验证本 grammar 的兼容性测试样例。
+- [nib](https://github.com/stylus/nib)：用于兼容性扫描的真实 Stylus 项目源码。
+- [Tree-sitter](https://github.com/tree-sitter/tree-sitter)：本 grammar 所基于的增量解析基础设施与 CLI。
+- [tree-sitter-less](https://github.com/jimliang/tree-sitter-less)：外部 scanner 与缩进处理模式的有益参考。
+- [Zed](https://github.com/zed-industries/zed)：本 grammar 通过 [stylus-zed](https://github.com/sf-yuzifu/stylus-zed) 面向的下游编辑器平台。
+
 ## 许可证
 
 [MIT](LICENSE)

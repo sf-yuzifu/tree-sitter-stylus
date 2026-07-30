@@ -156,6 +156,16 @@ Issues and pull requests are welcome. Parser bug reports should include:
 
 Run `npx tree-sitter test` and parse `example.styl` before submitting grammar changes. Zed-specific integration issues should be reported in [stylus-zed](https://github.com/sf-yuzifu/stylus-zed).
 
+## Acknowledgements
+
+This grammar builds on and is grateful to the following projects:
+
+- [Stylus](https://github.com/stylus/stylus) — the language, reference compiler, documentation, and the compatibility fixtures used to validate this grammar.
+- [nib](https://github.com/stylus/nib) — real-world Stylus sources for compatibility sweeps.
+- [Tree-sitter](https://github.com/tree-sitter/tree-sitter) — the incremental parsing infrastructure and CLI this grammar is built with.
+- [tree-sitter-less](https://github.com/jimliang/tree-sitter-less) — a useful reference for external-scanner and indentation handling patterns.
+- [Zed](https://github.com/zed-industries/zed) — the downstream editor platform this grammar targets through [stylus-zed](https://github.com/sf-yuzifu/stylus-zed).
+
 ## License
 
 [MIT](LICENSE)
