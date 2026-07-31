@@ -16,6 +16,9 @@
     "src",
     "queries"
   ],
+  "scripts": {
+    "sweep": "node scripts/sweep.mjs"
+  },
   "devDependencies": {
     "tree-sitter-cli": "^0.26.0"
   }

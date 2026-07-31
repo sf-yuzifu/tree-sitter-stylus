@@ -30,9 +30,9 @@
 - 21 个聚焦的 Tree-sitter corpus 测试，全部通过
 - 完整的 [`example.styl`](example.styl) fixture，解析结果中没有 `ERROR` 或 `MISSING` 节点；该 fixture 同时能被官方 Stylus 编译器无错误编译
 - highlights、brackets、indents 与 text objects 查询均可编译
-- 对 Stylus 官方仓库与 [nib](https://github.com/stylus/nib) 中 501 个非空 `.styl` 文件的手工扫描，未产生 `ERROR` 或 `MISSING` 节点
+- 对官方 [Stylus](https://github.com/stylus/stylus) 仓库（固定 `0.64.0` tag）与 [nib](https://github.com/stylus/nib)（固定 `v1.2.0` tag）中 499 个非空 `.styl` 文件的可复现扫描，未产生 `ERROR` 或 `MISSING` 节点——本地可用 `npm run sweep` 复现（revision 可通过 `SWEEP_STYLUS_REF` / `SWEEP_NIB_REF` 覆盖）
 
-CI 目前会重新生成 parser 并运行 corpus 测试。完整 fixture、查询编译与真实项目扫描属于发布前检查而非 CI 任务；在扫描脚本与样例来源 revision 纳入仓库前，501 文件数据只表示一次已记录的测试结果。
+CI 会在每次推送时重新生成 parser、运行 corpus 测试、解析 fixture、编译全部查询，并运行固定 revision 的 499 文件扫描。
 
 这些结果衡量的是 parser 兼容性，并不等价于编译器语义。Stylus 官方编译器仍然是判断代码语义是否合法的最终依据。
 
@@ -138,14 +138,11 @@ tree-sitter-stylus/
 - grammar 会有意接受一些有歧义或不完整的输入，以保证编辑过程中的可用性。它不能替代 Stylus 编译器或 linter。
 - `example.styl` 覆盖的部分写法有冒烟测试，但还没有专门的 corpus 断言。
 - 尚未提供语言绑定和 npm/crates.io/PyPI 等包仓库发布。
-- CI 尚未运行完整 fixture、查询编译或真实项目兼容性扫描。
 
 ## 路线图
 
 - 将 fixture 中剩余的高级写法转换为聚焦的 corpus 测试
 - 在不拒绝任意 CSS 语法的前提下，结构化解析常见伪选择器参数
-- 增加带固定 Stylus 与 nib revision 的可复现真实项目兼容性扫描脚本
-- 在 CI 中加入查询与 fixture 检查
 - 增加标准 Tree-sitter 语言绑定与包发布
 - 增加 fuzz、增量编辑与 parser 性能测试
 

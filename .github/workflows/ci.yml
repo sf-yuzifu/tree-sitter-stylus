@@ -15,3 +15,24 @@ jobs:
       - run: npm install
       - run: npx tree-sitter generate
       - run: npx tree-sitter test
+      - name: Parse the full-language fixtures
+        run: |
+          npx tree-sitter parse --quiet --stat example.styl
+          npx tree-sitter parse --quiet --stat example-partials.styl
+      - name: Compile all queries against the fixture
+        run: |
+          for query in queries/*.scm; do
+            npx tree-sitter query "$query" example.styl >/dev/null
+          done
+
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npx tree-sitter generate
+      - name: Real-world compatibility sweep (stylus@0.64.0 + nib@v1.2.0)
+        run: node scripts/sweep.mjs

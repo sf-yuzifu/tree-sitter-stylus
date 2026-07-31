@@ -26,11 +26,11 @@ See [`example.styl`](example.styl) for a broad syntax fixture and [`test/corpus/
 The current parser has been checked with:
 
 - 21 focused Tree-sitter corpus tests, all passing
-- The full [`example.styl`](example.styl) fixture, parsed without `ERROR` or `MISSING` nodes
+- The full [`example.styl`](example.styl) fixture, parsed without `ERROR` or `MISSING` nodes; the fixture also compiles cleanly with the official Stylus compiler
 - Query compilation for highlights, brackets, indentation, and text objects
-- A manual sweep of 501 non-empty `.styl` files from the official Stylus repository and [nib](https://github.com/stylus/nib), parsed without `ERROR` or `MISSING` nodes
+- A reproducible sweep of 499 non-empty `.styl` files from the official [Stylus](https://github.com/stylus/stylus) repository (pinned to the `0.64.0` tag) and [nib](https://github.com/stylus/nib) (pinned to `v1.2.0`), parsed without `ERROR` or `MISSING` nodes — run it yourself with `npm run sweep` (revisions are overridable via `SWEEP_STYLUS_REF` / `SWEEP_NIB_REF`)
 
-CI currently regenerates the parser and runs the corpus suite. The full fixture, queries, and real-world sweep are release checks rather than CI jobs. The 501-file result is a recorded manual check until its runner and source revisions are committed.
+CI regenerates the parser, runs the corpus suite, parses the fixtures, compiles all queries, and runs the pinned 499-file sweep on every push.
 
 These checks measure parser compatibility, not compiler equivalence. The official Stylus compiler remains the source of truth for semantic validity.
 
@@ -135,14 +135,11 @@ tree-sitter-stylus/
 - The grammar intentionally accepts some ambiguous or incomplete input to remain useful during editing. It does not replace the Stylus compiler or a linter.
 - Some constructs covered by `example.styl` are smoke-tested but do not yet have dedicated corpus assertions.
 - Language bindings and npm/crates.io/PyPI-style package releases are not available yet.
-- CI does not yet run the full fixture, compile queries, or reproduce the real-world compatibility sweep.
 
 ## Roadmap
 
 - Convert the remaining advanced fixture constructs into focused corpus tests
 - Parse common pseudo-selector arguments structurally without rejecting arbitrary CSS syntax
-- Add a reproducible real-world compatibility runner with pinned Stylus and nib revisions
-- Add query and fixture checks to CI
 - Add standard Tree-sitter language bindings and package releases
 - Add fuzz, incremental-edit, and parser performance coverage
 
